@@ -2,6 +2,7 @@ package silog
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"io"
 	"log/slog"
@@ -11,10 +12,26 @@ import (
 	"sync"
 	"time"
 
-	"go.abhg.dev/gs/internal/must"
+	"github.com/mattn/go-isatty"
 )
 
-// logHandler is a slog.Handler that writes to an io.Writer
+// Options defines options for the logger.
+type Options struct {
+	// Level is the minimum log level to log.
+	// It must be one of the supported log levels.
+	// The default is LevelInfo.
+	Level slog.Leveler // optional
+	// TODO: rename to Leveler
+
+	// Style is the style to use for the logger.
+	// If unset, the style will be picked based on whether
+	// the output is a terminal or not.
+	Style *Style // optional
+
+	// TODO: kitchen time by default
+}
+
+// Handler is a slog.Handler that writes to an io.Writer
 // with colored output.
 //
 // Output is in a logfmt-style format, with colored levels.
@@ -22,7 +39,7 @@ import (
 //
 //   - rendering of trace level
 //   - multi-line fields are indented and aligned
-type logHandler struct {
+type Handler struct {
 	lvl   slog.Leveler // required
 	style *Style       // required
 	outMu *sync.Mutex  // required
@@ -38,18 +55,36 @@ type logHandler struct {
 	// groups is the current group stack.
 	groups []string
 
+	// Number of levels to downgrade a log message
+	// before writing it.
+	lvlOffset int
+
 	// prefix is the prefix to use for the logger.
 	prefix string
 }
 
-var _ slog.Handler = (*logHandler)(nil)
+var _ slog.Handler = (*Handler)(nil)
 
-func newLogHandler(out io.Writer, lvl slog.Leveler, style *Style) *logHandler {
-	must.NotBeNilf(out, "output writer cannot be nil")
-	must.NotBeNilf(lvl, "leveler cannot be nil")
-	must.NotBeNilf(style, "style cannot be nil")
+func NewHandler(out io.Writer, opts *Options) *Handler {
+	opts = cmp.Or(opts, &Options{})
 
-	return &logHandler{
+	style := opts.Style
+	if style == nil {
+		if fder, ok := out.(interface {
+			Fd() uintptr
+		}); ok && isatty.IsTerminal(fder.Fd()) {
+			style = DefaultStyle()
+		} else {
+			style = PlainStyle()
+		}
+	}
+
+	lvl := opts.Level
+	if lvl == nil {
+		lvl = slog.LevelInfo // default level
+	}
+
+	return &Handler{
 		lvl:   lvl,
 		style: style,
 		outMu: new(sync.Mutex),
@@ -57,7 +92,8 @@ func newLogHandler(out io.Writer, lvl slog.Leveler, style *Style) *logHandler {
 	}
 }
 
-func (l *logHandler) Enabled(_ context.Context, lvl slog.Level) bool {
+func (l *Handler) Enabled(_ context.Context, lvl slog.Level) bool {
+	lvl += slog.Level(l.lvlOffset)
 	return l.lvl.Level() <= lvl
 }
 
@@ -69,11 +105,14 @@ const (
 	indent       = "  " // indentation for multi-line attributes
 )
 
-func (l *logHandler) Handle(_ context.Context, rec slog.Record) error {
+func (l *Handler) Handle(_ context.Context, rec slog.Record) error {
 	bs := *takeBuf()
 	defer releaseBuf(&bs)
 
-	lvlString := l.style.LevelLabels.Get(Level(rec.Level)).String()
+	rec.Level += slog.Level(l.lvlOffset)
+	lvlString := l.style.LevelLabels[rec.Level].String()
+	// TODO: Use empty string with no space for unknown level
+
 	// If the message is multi-line, we'll need to prepend the level
 	// to each line.
 	for line := range strings.Lines(rec.Message) {
@@ -95,7 +134,7 @@ func (l *logHandler) Handle(_ context.Context, rec slog.Record) error {
 		}
 		msg.WriteString(line)
 
-		line = l.style.Messages.Get(Level(rec.Level)).Render(msg.String())
+		line = l.style.Messages[rec.Level].Render(msg.String())
 		bs = append(bs, line...)
 		if trailingNewline {
 			bs = append(bs, '\n')
@@ -131,7 +170,7 @@ func (l *logHandler) Handle(_ context.Context, rec slog.Record) error {
 	return err
 }
 
-func (l *logHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (l *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	f := attrFormatter{
 		buf:    slices.Clone(l.attrs),
 		groups: slices.Clone(l.groups),
@@ -147,7 +186,7 @@ func (l *logHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &newL
 }
 
-func (l *logHandler) WithGroup(name string) slog.Handler {
+func (l *Handler) WithGroup(name string) slog.Handler {
 	newL := *l
 	newL.groups = append(slices.Clone(l.groups), name)
 	return &newL
@@ -156,16 +195,25 @@ func (l *logHandler) WithGroup(name string) slog.Handler {
 // WithLeveler returns a new handler with the given leveler
 // but with the same attributes and groups as this handler.
 // It will write to the same output writer as this handler.
-func (l *logHandler) WithLeveler(lvl slog.Leveler) slog.Handler {
+func (l *Handler) WithLeveler(lvl slog.Leveler) slog.Handler {
 	newL := *l
 	newL.lvl = lvl
 	return &newL
 }
 
 // WithPrefix returns a new handler with the given prefix
-func (l *logHandler) WithPrefix(prefix string) slog.Handler {
+func (l *Handler) WithPrefix(prefix string) slog.Handler {
 	newL := *l
 	newL.prefix = prefix
+	return &newL
+}
+
+// TODO: rename to WithLevelOffset?
+// TODO: or a general level remapper
+// that includes a std level downgrader
+func (l *Handler) WithDowngrade(n int) slog.Handler {
+	newL := *l
+	newL.lvlOffset -= n
 	return &newL
 }
 
