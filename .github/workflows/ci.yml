@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      name: Check out repository
+    - name: Set up mise
+      uses: jdx/mise-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        cache_key_prefix: mise-v0-stable
+    - run: mise run lint
+
+  test:
+    name: Test (Go ${{ matrix.mise-env }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mise-env: ["stable", "oldstable"]
+
+    env:
+      MISE_ENV: ${{ matrix.mise-env }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up mise
+      uses: jdx/mise-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        cache_key_prefix: mise-v0-${{ matrix.mise-env }}
+    - name: Test
+      run: mise run cover
+    - name: Upload coverage
+      uses: codecov/codecov-action@v5
