@@ -279,24 +279,33 @@ func (h *Handler) WithPrefix(prefix string) slog.Handler {
 	return &newH
 }
 
-// WithDowngrade returns a new handler
-// that will downgrade the log level for each log message
-// by the given number of levels.
+// WithLevelOffset returns a copy of this handler
+// that will offset the log level by the given number of levels
+// before writing it.
 //
+// Levels defined in log/slog are 4-levels apart,
+// so you can use 4, or -4 to upgrade or downgrade log levels.
 // For example:
 //
-//	handler = handler.WithDowngrade(4)
-//	// log/slog levels are offset by 4.
+//	handler = handler.WithLevelOffset(-4)
 //
-// This will result in [slog.LevelInfo] messages
-// being written as [slog.LevelDebug] messages.
-func (h *Handler) WithDowngrade(n int) slog.Handler {
-	// TODO: rename to WithLevelOffset?
-	// TODO: or a general level remapper
-	// that includes a std level downgrader
+// This will result in the following remapping:
+//
+//	slog.LevelError -> slog.LevelWarn
+//	slog.LevelWarn  -> slog.LevelInfo
+//	slog.LevelInfo  -> slog.LevelDebug
+//	slog.LevelDebug -> slog.LevelDebug - 4
+//
+// Any existing level offset is retained, so this operation is additive.
+func (h *Handler) WithLevelOffset(n int) slog.Handler {
 	newH := *h
-	newH.lvlOffset -= n
+	newH.lvlOffset += n
 	return &newH
+}
+
+// LevelOffset returns the current level offset for this handler, if any.
+func (h *Handler) LevelOffset() int {
+	return h.lvlOffset
 }
 
 type attrFormatter struct {
