@@ -14,6 +14,7 @@ type Style struct {
 	LevelLabels       map[slog.Level]lipgloss.Style // required
 	MultilinePrefix   lipgloss.Style                // required
 	PrefixDelimiter   lipgloss.Style                // required
+	Time              lipgloss.Style                // required
 
 	Messages map[slog.Level]lipgloss.Style
 	Values   map[string]lipgloss.Style
@@ -28,6 +29,7 @@ func DefaultStyle() *Style {
 		KeyValueDelimiter: lipgloss.NewStyle().SetString("=").Faint(true),
 		MultilinePrefix:   lipgloss.NewStyle().SetString("| ").Faint(true),
 		PrefixDelimiter:   lipgloss.NewStyle().SetString(": "),
+		Time:              lipgloss.NewStyle().Faint(true),
 		LevelLabels: map[slog.Level]lipgloss.Style{
 			slog.LevelDebug: lipgloss.NewStyle().SetString("DBG"),                                  // default
 			slog.LevelInfo:  lipgloss.NewStyle().SetString("INF").Foreground(lipgloss.Color("10")), // green
@@ -48,6 +50,7 @@ func PlainStyle() *Style {
 	return &Style{
 		KeyValueDelimiter: lipgloss.NewStyle().SetString("="),
 		MultilinePrefix:   lipgloss.NewStyle().SetString("  | "),
+		Time:              lipgloss.NewStyle(),
 		PrefixDelimiter:   lipgloss.NewStyle().SetString(": "),
 		LevelLabels: map[slog.Level]lipgloss.Style{
 			slog.LevelDebug: lipgloss.NewStyle().SetString("DBG"),
