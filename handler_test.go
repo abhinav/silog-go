@@ -242,6 +242,8 @@ func TestHandler_formatting(t *testing.T) {
 		)
 	})
 
+	// t.Run("MultilineAttrValueNo")
+
 	t.Run("LeadingWhitespace", func(t *testing.T) {
 		log.Info(" foo")
 		assertLinesWithTime(t, "9:45AM INF  foo")
@@ -254,6 +256,8 @@ func TestHandler_formatting(t *testing.T) {
 
 	t.Run("Prefix", func(t *testing.T) {
 		log := slog.New(handler.SetPrefix("prefix"))
+		assert.Empty(t, handler.Prefix(), "original handler prefix should be unchanged")
+		assert.Equal(t, "prefix", log.Handler().(*silog.Handler).Prefix())
 
 		log.Info("foo")
 		assertLinesWithTime(t, "9:45AM INF prefix: foo")
@@ -288,7 +292,9 @@ func TestHandler_formatting(t *testing.T) {
 			"9:45AM DBG quux")
 
 		t.Run("Undo", func(t *testing.T) {
-			upLog := slog.New(downLog.Handler().(*silog.Handler).WithLevelOffset(4))
+			h := downLog.Handler().(*silog.Handler)
+			h = h.WithLevelOffset(-h.LevelOffset())
+			upLog := slog.New(h)
 
 			upLog.Debug("foo")
 			upLog.Info("bar")
@@ -417,6 +423,8 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 }
 
 func TestHandler_multilineMessageStyling(t *testing.T) {
+	// Color profile has to be set on renderer explicitly.
+	// https://github.com/charmbracelet/lipgloss/issues/267
 	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
 	renderer.SetColorProfile(termenv.ANSI)
 
@@ -440,6 +448,110 @@ func TestHandler_multilineMessageStyling(t *testing.T) {
 	assert.Equal(t,
 		"INF \x1b[1mfoo\x1b[0m\n"+
 			"INF \x1b[1mbar\x1b[0m\n",
+		buffer.String())
+}
+
+func TestHandler_attrValueStyle(t *testing.T) {
+	// Color profile has to be set on renderer explicitly.
+	// https://github.com/charmbracelet/lipgloss/issues/267
+	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
+	renderer.SetColorProfile(termenv.ANSI)
+
+	style := silog.PlainStyle(renderer)
+	style.Values["k1"] = renderer.NewStyle().Bold(true)
+
+	var buffer strings.Builder
+	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
+		Level: slog.LevelDebug,
+		Style: style,
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return attr
+		},
+	}))
+
+	log.Info("foo", "k1", "bar")
+
+	assert.Equal(t,
+		"INF foo  k1=\x1b[1mbar\x1b[0m\n",
+		buffer.String())
+}
+
+func TestHandler_multlineAttrValueStyle(t *testing.T) {
+	// Color profile has to be set on renderer explicitly.
+	// https://github.com/charmbracelet/lipgloss/issues/267
+	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
+	renderer.SetColorProfile(termenv.ANSI)
+
+	style := silog.PlainStyle(renderer)
+	style.Values["k1"] = renderer.NewStyle().Bold(true)
+
+	var buffer strings.Builder
+	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
+		Level: slog.LevelDebug,
+		Style: style,
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return attr
+		},
+	}))
+
+	log.Info("foo", "k1", "bar\nbaz")
+
+	assert.Equal(t,
+		"INF foo  \n"+
+			"  k1=\n"+
+			"    | \x1b[1mbar\x1b[0m\n"+
+			"    | \x1b[1mbaz\x1b[0m\n",
+		buffer.String())
+}
+
+func TestHandler_replaceLevel_otherType(t *testing.T) {
+	var buffer strings.Builder
+	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
+		Level: slog.LevelDebug,
+		Style: silog.PlainStyle(nil),
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.LevelKey {
+				return slog.String(attr.Key, "custom")
+			}
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return attr
+		},
+	})
+
+	log := slog.New(handler)
+	log.Debug("foo")
+	log.Debug("bar")
+
+	assert.Equal(t, "custom foo\ncustom bar\n", buffer.String())
+}
+
+func TestHandler_replaceTime_otherType(t *testing.T) {
+	var buffer strings.Builder
+	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
+		Level: slog.LevelDebug,
+		Style: silog.PlainStyle(nil),
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				return slog.String(attr.Key, "custom-time")
+			}
+			return attr
+		},
+	})
+
+	log := slog.New(handler)
+	log.Debug("foo")
+	log.Info("bar")
+
+	assert.Equal(t, "custom-time DBG foo\n"+
+		"custom-time INF bar\n",
 		buffer.String())
 }
 
