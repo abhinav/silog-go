@@ -434,12 +434,6 @@ func (f *attrFormatter) FormatAttr(attr slog.Attr) {
 			}
 			f.buf = append(f.buf, '\n')
 		}
-
-		// If multi-line attribute value does not end with a newline,
-		// add one.
-		if f.buf[len(f.buf)-1] != '\n' {
-			f.buf = append(f.buf, '\n')
-		}
 	} else {
 		if hasStyle {
 			f.buf = append(f.buf, valueStyle.Render(string(valbs))...)
