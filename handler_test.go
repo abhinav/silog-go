@@ -253,14 +253,14 @@ func TestHandler_formatting(t *testing.T) {
 	})
 
 	t.Run("Prefix", func(t *testing.T) {
-		log := slog.New(handler.WithPrefix("prefix"))
+		log := slog.New(handler.SetPrefix("prefix"))
 
 		log.Info("foo")
 		assertLinesWithTime(t, "9:45AM INF prefix: foo")
 	})
 
 	t.Run("MultilineMessageWithPrefix", func(t *testing.T) {
-		log := slog.New(handler.WithPrefix("prefix"))
+		log := slog.New(handler.SetPrefix("prefix"))
 
 		log.Info("foo\nbar\nbaz")
 		assertLinesWithTime(t,
