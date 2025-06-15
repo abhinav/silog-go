@@ -289,7 +289,7 @@ func TestHandler_WithLevel(t *testing.T) {
 	rootLogger.Debug("foo")
 	assert.Empty(t, buffer.String())
 
-	debugLogger := slog.New(handler.WithLeveler(slog.LevelDebug))
+	debugLogger := slog.New(handler.WithLevel(slog.LevelDebug))
 	debugLogger.Debug("foo")
 	assert.Equal(t, "DBG foo\n", buffer.String())
 	buffer.Reset()
