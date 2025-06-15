@@ -44,3 +44,5 @@ jobs:
       run: mise run cover
     - name: Upload coverage
       uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
