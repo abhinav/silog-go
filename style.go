@@ -1,42 +1,44 @@
 package silog
 
 import (
+	"log/slog"
+
 	"github.com/charmbracelet/lipgloss"
-	"go.abhg.dev/gs/internal/ui"
 )
 
 // Style defines the output styling for the logger.
 type Style struct {
 	Key lipgloss.Style
 
-	KeyValueDelimiter lipgloss.Style          // required
-	LevelLabels       ByLevel[lipgloss.Style] // required
-	MultilinePrefix   lipgloss.Style          // required
-	PrefixDelimiter   lipgloss.Style          // required
+	KeyValueDelimiter lipgloss.Style                // required
+	LevelLabels       map[slog.Level]lipgloss.Style // required
+	MultilinePrefix   lipgloss.Style                // required
+	PrefixDelimiter   lipgloss.Style                // required
 
-	Messages ByLevel[lipgloss.Style]
+	Messages map[slog.Level]lipgloss.Style
 	Values   map[string]lipgloss.Style
 }
+
+// TODO: lipgloss.Renderer-based style
 
 // DefaultStyle returns the default style for the logger.
 func DefaultStyle() *Style {
 	return &Style{
-		Key:               ui.NewStyle().Faint(true),
-		KeyValueDelimiter: ui.NewStyle().SetString("=").Faint(true),
-		MultilinePrefix:   ui.NewStyle().SetString("| ").Faint(true),
-		PrefixDelimiter:   ui.NewStyle().SetString(": "),
-		LevelLabels: ByLevel[lipgloss.Style]{
-			Debug: ui.NewStyle().SetString("DBG"),                                  // default
-			Info:  ui.NewStyle().SetString("INF").Foreground(lipgloss.Color("10")), // green
-			Warn:  ui.NewStyle().SetString("WRN").Foreground(lipgloss.Color("11")), // yellow
-			Error: ui.NewStyle().SetString("ERR").Foreground(lipgloss.Color("9")),  // red
-			Fatal: ui.NewStyle().SetString("FTL").Foreground(lipgloss.Color("9")),  // red
+		Key:               lipgloss.NewStyle().Faint(true),
+		KeyValueDelimiter: lipgloss.NewStyle().SetString("=").Faint(true),
+		MultilinePrefix:   lipgloss.NewStyle().SetString("| ").Faint(true),
+		PrefixDelimiter:   lipgloss.NewStyle().SetString(": "),
+		LevelLabels: map[slog.Level]lipgloss.Style{
+			slog.LevelDebug: lipgloss.NewStyle().SetString("DBG"),                                  // default
+			slog.LevelInfo:  lipgloss.NewStyle().SetString("INF").Foreground(lipgloss.Color("10")), // green
+			slog.LevelWarn:  lipgloss.NewStyle().SetString("WRN").Foreground(lipgloss.Color("11")), // yellow
+			slog.LevelError: lipgloss.NewStyle().SetString("ERR").Foreground(lipgloss.Color("9")),  // red
 		},
-		Messages: ByLevel[lipgloss.Style]{
-			Debug: ui.NewStyle().Faint(true),
+		Messages: map[slog.Level]lipgloss.Style{
+			slog.LevelDebug: lipgloss.NewStyle().Faint(true),
 		},
 		Values: map[string]lipgloss.Style{
-			"error": ui.NewStyle().Foreground(lipgloss.Color("9")), // red
+			"error": lipgloss.NewStyle().Foreground(lipgloss.Color("9")), // red
 		},
 	}
 }
@@ -44,15 +46,16 @@ func DefaultStyle() *Style {
 // PlainStyle returns a style for the logger without any colors.
 func PlainStyle() *Style {
 	return &Style{
-		KeyValueDelimiter: ui.NewStyle().SetString("="),
-		MultilinePrefix:   ui.NewStyle().SetString("  | "),
-		PrefixDelimiter:   ui.NewStyle().SetString(": "),
-		LevelLabels: ByLevel[lipgloss.Style]{
-			Debug: ui.NewStyle().SetString("DBG"),
-			Info:  ui.NewStyle().SetString("INF"),
-			Warn:  ui.NewStyle().SetString("WRN"),
-			Error: ui.NewStyle().SetString("ERR"),
-			Fatal: ui.NewStyle().SetString("FTL"),
+		KeyValueDelimiter: lipgloss.NewStyle().SetString("="),
+		MultilinePrefix:   lipgloss.NewStyle().SetString("  | "),
+		PrefixDelimiter:   lipgloss.NewStyle().SetString(": "),
+		LevelLabels: map[slog.Level]lipgloss.Style{
+			slog.LevelDebug: lipgloss.NewStyle().SetString("DBG"),
+			slog.LevelInfo:  lipgloss.NewStyle().SetString("INF"),
+			slog.LevelWarn:  lipgloss.NewStyle().SetString("WRN"),
+			slog.LevelError: lipgloss.NewStyle().SetString("ERR"),
 		},
+		Messages: map[slog.Level]lipgloss.Style{},
+		Values:   map[string]lipgloss.Style{},
 	}
 }

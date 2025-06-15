@@ -1,6 +1,7 @@
 package silog_test
 
 import (
+	"log/slog"
 	"strings"
 	"testing"
 
@@ -22,9 +23,16 @@ func TestDefaultStyle(t *testing.T) {
 	assertHasValue(t, style.MultilinePrefix, "MultilinePrefix")
 	assertHasValue(t, style.PrefixDelimiter, "PrefixDelimiter")
 
-	for _, lvl := range silog.Levels {
+	defaultLevels := []slog.Level{
+		slog.LevelDebug,
+		slog.LevelInfo,
+		slog.LevelWarn,
+		slog.LevelError,
+	}
+
+	for _, lvl := range defaultLevels {
 		t.Run(lvl.String(), func(t *testing.T) {
-			assertHasValue(t, style.LevelLabels.Get(lvl), "LevelLabels.Get(%s)", lvl)
+			assertHasValue(t, style.LevelLabels[lvl], "LevelLabels.Get(%s)", lvl)
 		})
 	}
 }

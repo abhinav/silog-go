@@ -19,7 +19,10 @@ func TestLogHandler_slogtest(t *testing.T) {
 	slogtest.Run(t, func(*testing.T) slog.Handler {
 		buffer.Reset()
 
-		saver.Handler = newLogHandler(&buffer, slog.LevelDebug, PlainStyle())
+		saver.Handler = NewHandler(&buffer, &Options{
+			Level: slog.LevelDebug,
+			Style: PlainStyle(),
+		})
 		return &saver
 	}, func(t *testing.T) map[string]any {
 		attrs := make(map[string]any)
