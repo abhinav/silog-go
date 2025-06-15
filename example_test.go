@@ -13,7 +13,7 @@ import (
 func Example_customLevel() {
 	const LevelTrace = slog.LevelDebug - 4
 
-	style := silog.PlainStyle()
+	style := silog.PlainStyle(nil)
 	style.LevelLabels[LevelTrace] = style.LevelLabels[slog.LevelDebug].SetString("TRC")
 	style.Messages[LevelTrace] = style.Messages[slog.LevelDebug]
 
@@ -38,7 +38,7 @@ func Example_customLevel() {
 func Example_noLabel() {
 	const LevelPlain = slog.LevelDebug - 1
 
-	style := silog.PlainStyle()
+	style := silog.PlainStyle(nil)
 	style.LevelLabels[LevelPlain] = lipgloss.NewStyle() // No label
 	style.Messages[LevelPlain] = style.Messages[slog.LevelDebug]
 
@@ -61,7 +61,7 @@ func Example_noLabel() {
 
 func ExampleHandler_SetPrefix() {
 	handler := silog.NewHandler(os.Stdout, &silog.HandlerOptions{
-		Style: silog.PlainStyle(),
+		Style: silog.PlainStyle(nil),
 		// To keep the test output clean easy to test,
 		// we will not log the time in this example.
 		ReplaceAttr: skipTime,
@@ -81,7 +81,7 @@ func ExampleHandler_SetPrefix() {
 func ExampleHandler_WithLevelOffset() {
 	handler := silog.NewHandler(os.Stdout, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(),
+		Style: silog.PlainStyle(nil),
 		// To keep the test output clean easy to test,
 		// we will not log the time in this example.
 		ReplaceAttr: skipTime,

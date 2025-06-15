@@ -1,6 +1,7 @@
 package silog
 
 import (
+	"cmp"
 	"log/slog"
 
 	"github.com/charmbracelet/lipgloss"
@@ -17,7 +18,7 @@ import (
 // and then modify the fields you want to change.
 // For example:
 //
-//	style := silog.DefaultStyle()
+//	style := silog.DefaultStyle(nil)
 //	style.KeyValueDelimiter = lipgloss.NewStyle().SetString(": ")
 type Style struct {
 	// Key is the style used for the key in key-value pairs.
@@ -76,45 +77,50 @@ type Style struct {
 	Values map[string]lipgloss.Style
 }
 
-// TODO: lipgloss.Renderer-based style
-
 // DefaultStyle is the default style used by [Handler].
 // It provides colored output, faint text for debug messages, red errors, etc.
-func DefaultStyle() *Style {
+//
+// Renderer specifies the lipgloss renderer to use for styling.
+// If unset, the default lipgloss renderer is used.
+func DefaultStyle(renderer *lipgloss.Renderer) *Style {
+	renderer = cmp.Or(renderer, lipgloss.DefaultRenderer())
 	return &Style{
-		Key:                  lipgloss.NewStyle().Faint(true),
-		KeyValueDelimiter:    lipgloss.NewStyle().SetString("=").Faint(true),
-		MultilineValuePrefix: lipgloss.NewStyle().SetString("| ").Faint(true),
-		PrefixDelimiter:      lipgloss.NewStyle().SetString(": "),
-		Time:                 lipgloss.NewStyle().Faint(true),
+		Key:                  renderer.NewStyle().Faint(true),
+		KeyValueDelimiter:    renderer.NewStyle().SetString("=").Faint(true),
+		MultilineValuePrefix: renderer.NewStyle().SetString("| ").Faint(true),
+		PrefixDelimiter:      renderer.NewStyle().SetString(": "),
+		Time:                 renderer.NewStyle().Faint(true),
 		LevelLabels: map[slog.Level]lipgloss.Style{
-			slog.LevelDebug: lipgloss.NewStyle().SetString("DBG"),                                  // default
-			slog.LevelInfo:  lipgloss.NewStyle().SetString("INF").Foreground(lipgloss.Color("10")), // green
-			slog.LevelWarn:  lipgloss.NewStyle().SetString("WRN").Foreground(lipgloss.Color("11")), // yellow
-			slog.LevelError: lipgloss.NewStyle().SetString("ERR").Foreground(lipgloss.Color("9")),  // red
+			slog.LevelDebug: renderer.NewStyle().SetString("DBG"),                                  // default
+			slog.LevelInfo:  renderer.NewStyle().SetString("INF").Foreground(lipgloss.Color("10")), // green
+			slog.LevelWarn:  renderer.NewStyle().SetString("WRN").Foreground(lipgloss.Color("11")), // yellow
+			slog.LevelError: renderer.NewStyle().SetString("ERR").Foreground(lipgloss.Color("9")),  // red
 		},
 		Messages: map[slog.Level]lipgloss.Style{
-			slog.LevelDebug: lipgloss.NewStyle().Faint(true),
+			slog.LevelDebug: renderer.NewStyle().Faint(true),
 		},
 		Values: map[string]lipgloss.Style{
-			"error": lipgloss.NewStyle().Foreground(lipgloss.Color("9")), // red
+			"error": renderer.NewStyle().Foreground(lipgloss.Color("9")), // red
 		},
 	}
 }
 
 // PlainStyle is a style for [Handler] that performs no styling.
 // It's best when writing to a non-terminal destination.
-func PlainStyle() *Style {
+//
+// Renderer specifies the lipgloss renderer to use for styling.
+// If unset, the default lipgloss renderer is used.
+func PlainStyle(renderer *lipgloss.Renderer) *Style {
 	return &Style{
-		KeyValueDelimiter:    lipgloss.NewStyle().SetString("="),
-		MultilineValuePrefix: lipgloss.NewStyle().SetString("  | "),
-		Time:                 lipgloss.NewStyle(),
-		PrefixDelimiter:      lipgloss.NewStyle().SetString(": "),
+		KeyValueDelimiter:    renderer.NewStyle().SetString("="),
+		MultilineValuePrefix: renderer.NewStyle().SetString("  | "),
+		Time:                 renderer.NewStyle(),
+		PrefixDelimiter:      renderer.NewStyle().SetString(": "),
 		LevelLabels: map[slog.Level]lipgloss.Style{
-			slog.LevelDebug: lipgloss.NewStyle().SetString("DBG"),
-			slog.LevelInfo:  lipgloss.NewStyle().SetString("INF"),
-			slog.LevelWarn:  lipgloss.NewStyle().SetString("WRN"),
-			slog.LevelError: lipgloss.NewStyle().SetString("ERR"),
+			slog.LevelDebug: renderer.NewStyle().SetString("DBG"),
+			slog.LevelInfo:  renderer.NewStyle().SetString("INF"),
+			slog.LevelWarn:  renderer.NewStyle().SetString("WRN"),
+			slog.LevelError: renderer.NewStyle().SetString("ERR"),
 		},
 		Messages: map[slog.Level]lipgloss.Style{},
 		Values:   map[string]lipgloss.Style{},

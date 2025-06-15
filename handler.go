@@ -87,7 +87,7 @@ var _ slog.Handler = (*Handler)(nil)
 // in a single Writer.Write call.
 func NewHandler(w io.Writer, opts *HandlerOptions) *Handler {
 	opts = cmp.Or(opts, &HandlerOptions{})
-	style := cmp.Or(opts.Style, DefaultStyle())
+	style := cmp.Or(opts.Style, DefaultStyle(nil))
 	timeFormat := cmp.Or(opts.TimeFormat, time.Kitchen)
 
 	lvl := opts.Level

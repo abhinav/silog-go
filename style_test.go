@@ -17,7 +17,7 @@ func TestDefaultStyle(t *testing.T) {
 		assert.NotEmpty(t, strings.TrimSpace(style.Value()), msgArgs...)
 	}
 
-	style := silog.DefaultStyle()
+	style := silog.DefaultStyle(nil)
 
 	assertHasValue(t, style.KeyValueDelimiter, "KeyValueDelimiter")
 	assertHasValue(t, style.MultilineValuePrefix, "MultilinePrefix")

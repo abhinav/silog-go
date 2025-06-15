@@ -16,7 +16,7 @@ func TestHandler_concurrentWrites(t *testing.T) {
 	var buffer strings.Builder
 
 	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
-		Style: silog.PlainStyle(),
+		Style: silog.PlainStyle(nil),
 	})
 	logger := slog.New(handler)
 
