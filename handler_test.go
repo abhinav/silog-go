@@ -18,7 +18,7 @@ func TestHandler_formatting(t *testing.T) {
 	var buffer strings.Builder
 	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(),
+		Style: silog.PlainStyle(nil),
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
 			if len(groups) == 0 && attr.Key == slog.TimeKey {
 				// Use a fixed time for deterministic output.
@@ -313,7 +313,7 @@ func TestHandler_WithLevel(t *testing.T) {
 			}
 			return attr
 		},
-		Style: silog.PlainStyle(),
+		Style: silog.PlainStyle(nil),
 	})
 	rootLogger := slog.New(handler)
 
@@ -371,7 +371,7 @@ func TestHandler_Enabled(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := silog.NewHandler(io.Discard, &silog.HandlerOptions{
 				Level: tt.leveler,
-				Style: silog.PlainStyle(),
+				Style: silog.PlainStyle(nil),
 			})
 			for _, level := range tt.enabled {
 				assert.True(t, h.Enabled(t.Context(), level.Level()), "level %s should be enabled", level)
@@ -392,7 +392,7 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 	var buffer strings.Builder
 	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(),
+		Style: silog.PlainStyle(nil),
 	}))
 
 	var ready, done sync.WaitGroup
@@ -417,13 +417,11 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 }
 
 func TestHandler_multilineMessageStyling(t *testing.T) {
-	// Force colored output even if the terminal doesn't support it.
-	t.Setenv("CLICOLOR_FORCE", "1")
-	defer lipgloss.SetColorProfile(lipgloss.ColorProfile())
-	lipgloss.SetColorProfile(termenv.EnvColorProfile())
+	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
+	renderer.SetColorProfile(termenv.ANSI)
 
-	style := silog.PlainStyle()
-	style.Messages[slog.LevelInfo] = lipgloss.NewStyle().Bold(true)
+	style := silog.PlainStyle(renderer)
+	style.Messages[slog.LevelInfo] = renderer.NewStyle().Bold(true)
 
 	var buffer strings.Builder
 	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
