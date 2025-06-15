@@ -270,8 +270,8 @@ func TestHandler_formatting(t *testing.T) {
 		)
 	})
 
-	t.Run("Downgrade", func(t *testing.T) {
-		downLog := slog.New(handler.WithDowngrade(4))
+	t.Run("WithLevelOffset", func(t *testing.T) {
+		downLog := slog.New(handler.WithLevelOffset(-4))
 
 		downLog.Debug("foo")
 		downLog.Info("bar")
@@ -286,6 +286,21 @@ func TestHandler_formatting(t *testing.T) {
 		log.Debug("quux")
 		assertLinesWithTime(t,
 			"9:45AM DBG quux")
+
+		t.Run("Undo", func(t *testing.T) {
+			upLog := slog.New(downLog.Handler().(*silog.Handler).WithLevelOffset(4))
+
+			upLog.Debug("foo")
+			upLog.Info("bar")
+			upLog.Warn("baz")
+			upLog.Error("qux")
+
+			assertLinesWithTime(t,
+				"9:45AM DBG foo",
+				"9:45AM INF bar",
+				"9:45AM WRN baz",
+				"9:45AM ERR qux")
+		})
 	})
 }
 
