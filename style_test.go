@@ -14,13 +14,13 @@ func TestDefaultStyle(t *testing.T) {
 	assertHasValue := func(t *testing.T, style lipgloss.Style, msgArgs ...any) {
 		t.Helper()
 
-		assert.NotEmpty(t, strings.TrimSpace(style.String()), msgArgs...)
+		assert.NotEmpty(t, strings.TrimSpace(style.Value()), msgArgs...)
 	}
 
 	style := silog.DefaultStyle()
 
 	assertHasValue(t, style.KeyValueDelimiter, "KeyValueDelimiter")
-	assertHasValue(t, style.MultilinePrefix, "MultilinePrefix")
+	assertHasValue(t, style.MultilineValuePrefix, "MultilinePrefix")
 	assertHasValue(t, style.PrefixDelimiter, "PrefixDelimiter")
 
 	defaultLevels := []slog.Level{

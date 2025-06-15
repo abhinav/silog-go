@@ -15,7 +15,7 @@ func TestLogHandler_slogtest(t *testing.T) {
 	slogtest.Run(t, func(*testing.T) slog.Handler {
 		buffer.Reset()
 
-		return NewHandler(&buffer, &Options{
+		return NewHandler(&buffer, &HandlerOptions{
 			Level:      slog.LevelDebug,
 			Style:      PlainStyle(),
 			TimeFormat: time.RFC3339,
