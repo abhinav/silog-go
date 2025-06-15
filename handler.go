@@ -266,17 +266,26 @@ func (h *Handler) WithGroup(name string) slog.Handler {
 // retaining all other attributes and groups.
 //
 // It will write to the same output writer as this handler.
-func (h *Handler) WithLevel(lvl slog.Leveler) slog.Handler {
+func (h *Handler) WithLevel(lvl slog.Leveler) *Handler {
 	newH := *h
 	newH.lvl = lvl
 	return &newH
 }
 
-// WithPrefix returns a new handler with the given prefix
-func (h *Handler) WithPrefix(prefix string) slog.Handler {
+// SetPrefix returns a copy of this handler
+// that will use the given prefix for each log message.
+//
+// If the handler already has a prefix,
+// this will replace it with the new prefix.
+func (h *Handler) SetPrefix(prefix string) *Handler {
 	newH := *h
 	newH.prefix = prefix
 	return &newH
+}
+
+// Prefix returns the current prefix for this handler, if any.
+func (h *Handler) Prefix() string {
+	return h.prefix
 }
 
 // WithLevelOffset returns a copy of this handler
@@ -297,7 +306,7 @@ func (h *Handler) WithPrefix(prefix string) slog.Handler {
 //	slog.LevelDebug -> slog.LevelDebug - 4
 //
 // Any existing level offset is retained, so this operation is additive.
-func (h *Handler) WithLevelOffset(n int) slog.Handler {
+func (h *Handler) WithLevelOffset(n int) *Handler {
 	newH := *h
 	newH.lvlOffset += n
 	return &newH
