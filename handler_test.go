@@ -18,10 +18,18 @@ func TestHandler_formatting(t *testing.T) {
 	var buffer strings.Builder
 	handler := silog.NewHandler(&buffer, &silog.Options{
 		Level: slog.LevelDebug,
+		Style: silog.PlainStyle(),
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				// Use a fixed time for deterministic output.
+				return slog.Time(slog.TimeKey, time.Date(2025, 0o6, 15, 9, 45, 0, 0, time.UTC))
+			}
+			return attr
+		},
 	})
 	log := slog.New(handler)
 
-	assertLines := func(t *testing.T, lines ...string) bool {
+	assertLinesWithTime := func(t *testing.T, lines ...string) bool {
 		t.Helper()
 
 		defer buffer.Reset()
@@ -33,7 +41,7 @@ func TestHandler_formatting(t *testing.T) {
 
 	t.Run("Message", func(t *testing.T) {
 		log.Info("foo")
-		assertLines(t, "INF foo")
+		assertLinesWithTime(t, "9:45AM INF foo")
 	})
 
 	t.Run("Levels", func(t *testing.T) {
@@ -42,16 +50,16 @@ func TestHandler_formatting(t *testing.T) {
 			logFn func(string, ...any)
 			want  string
 		}{
-			{"debug", log.Debug, "DBG hello"},
-			{"info", log.Info, "INF hello"},
-			{"warn", log.Warn, "WRN hello"},
-			{"error", log.Error, "ERR hello"},
+			{"debug", log.Debug, "9:45AM DBG hello"},
+			{"info", log.Info, "9:45AM INF hello"},
+			{"warn", log.Warn, "9:45AM WRN hello"},
+			{"error", log.Error, "9:45AM ERR hello"},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				tt.logFn("hello")
-				assertLines(t, tt.want)
+				assertLinesWithTime(t, tt.want)
 			})
 		}
 	})
@@ -77,22 +85,22 @@ func TestHandler_formatting(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				log.Info("foo", "k1", tt.value)
-				assertLines(t, "INF foo  k1="+tt.want)
+				assertLinesWithTime(t, "9:45AM INF foo  k1="+tt.want)
 			})
 		}
 	})
 
 	t.Run("EmptyAttr", func(t *testing.T) {
 		log.Info("foo", slog.Attr{}, "foo", "bar")
-		assertLines(t, "INF foo  foo=bar")
+		assertLinesWithTime(t, "9:45AM INF foo  foo=bar")
 	})
 
 	t.Run("MultilineMessage", func(t *testing.T) {
 		log.Info("foo\nbar\nbaz")
-		assertLines(t,
-			"INF foo",
-			"INF bar",
-			"INF baz",
+		assertLinesWithTime(t,
+			"9:45AM INF foo",
+			"9:45AM INF bar",
+			"9:45AM INF baz",
 		)
 	})
 
@@ -104,11 +112,11 @@ func TestHandler_formatting(t *testing.T) {
 		s.WriteString("qux\n")
 		log.Info(s.String())
 
-		assertLines(t,
-			"INF foo",
-			"INF   bar",
-			"INF     baz",
-			"INF qux",
+		assertLinesWithTime(t,
+			"9:45AM INF foo",
+			"9:45AM INF   bar",
+			"9:45AM INF     baz",
+			"9:45AM INF qux",
 		)
 	})
 
@@ -116,22 +124,22 @@ func TestHandler_formatting(t *testing.T) {
 		log := log.With("k1", true, "k2", 2, "k3", 3.0, "k4", "foo")
 		log.Info("bar")
 
-		assertLines(t, "INF bar  k1=true k2=2 k3=3 k4=foo")
+		assertLinesWithTime(t, "9:45AM INF bar  k1=true k2=2 k3=3 k4=foo")
 	})
 
 	t.Run("WithAttrsEmpty", func(t *testing.T) {
 		log := log.With()
 		log.Info("bar")
-		assertLines(t, "INF bar")
+		assertLinesWithTime(t, "9:45AM INF bar")
 	})
 
 	t.Run("MultilineMessageWithAttrs", func(t *testing.T) {
 		log := log.With("k1", true, "k2", 2, "k3", 3.0, "k4", "foo")
 		log.Info("bar\nbaz")
 
-		assertLines(t,
-			"INF bar",
-			"INF baz  k1=true k2=2 k3=3 k4=foo",
+		assertLinesWithTime(t,
+			"9:45AM INF bar",
+			"9:45AM INF baz  k1=true k2=2 k3=3 k4=foo",
 		)
 	})
 
@@ -139,16 +147,16 @@ func TestHandler_formatting(t *testing.T) {
 		log := log.With("k1", true, "k2", 2, "k3", 3.0, "k4", "foo")
 		log.Info("bar\nbaz\n")
 
-		assertLines(t,
-			"INF bar",
-			"INF baz",
+		assertLinesWithTime(t,
+			"9:45AM INF bar",
+			"9:45AM INF baz",
 			"  k1=true k2=2 k3=3 k4=foo",
 		)
 	})
 
 	t.Run("Attrs", func(t *testing.T) {
 		log.Info("foo", "k1", true, "k2", 2, "k3", 3.0, "k4", "bar")
-		assertLines(t, "INF foo  k1=true k2=2 k3=3 k4=bar")
+		assertLinesWithTime(t, "9:45AM INF foo  k1=true k2=2 k3=3 k4=bar")
 	})
 
 	t.Run("AttrsWithAttrs", func(t *testing.T) {
@@ -156,22 +164,22 @@ func TestHandler_formatting(t *testing.T) {
 		log.Info("foo", "k3", 3.0, "k4", "bar")
 		log.Warn("baz", "k5", 5.0, "k6", "qux")
 
-		assertLines(t,
-			"INF foo  k1=true k2=2 k3=3 k4=bar",
-			"WRN baz  k1=true k2=2 k5=5 k6=qux",
+		assertLinesWithTime(t,
+			"9:45AM INF foo  k1=true k2=2 k3=3 k4=bar",
+			"9:45AM WRN baz  k1=true k2=2 k5=5 k6=qux",
 		)
 	})
 
 	t.Run("WithGroup", func(t *testing.T) {
 		log := log.WithGroup("g")
 		log.Info("foo", "k1", true, "k2", 2, "k3", 3.0, "k4", "bar")
-		assertLines(t, "INF foo  g.k1=true g.k2=2 g.k3=3 g.k4=bar")
+		assertLinesWithTime(t, "9:45AM INF foo  g.k1=true g.k2=2 g.k3=3 g.k4=bar")
 	})
 
 	t.Run("WithGroupEmpty", func(t *testing.T) {
 		log := log.WithGroup("")
 		log.Info("foo", "k1", true)
-		assertLines(t, "INF foo  k1=true")
+		assertLinesWithTime(t, "9:45AM INF foo  k1=true")
 	})
 
 	t.Run("WithGroupWithAttrs", func(t *testing.T) {
@@ -179,39 +187,39 @@ func TestHandler_formatting(t *testing.T) {
 		log.Info("foo", "k3", 3.0, "k4", "bar")
 		log.Warn("baz", "k5", 5.0, "k6", "qux")
 
-		assertLines(t,
-			"INF foo  g.k1=true g.k2=2 g.k3=3 g.k4=bar",
-			"WRN baz  g.k1=true g.k2=2 g.k5=5 g.k6=qux",
+		assertLinesWithTime(t,
+			"9:45AM INF foo  g.k1=true g.k2=2 g.k3=3 g.k4=bar",
+			"9:45AM WRN baz  g.k1=true g.k2=2 g.k5=5 g.k6=qux",
 		)
 	})
 
 	t.Run("AttrGroup", func(t *testing.T) {
 		log.Info("foo", slog.Group("bar", "k1", true, "k2", 2, "k3", 3.0, "k4", "bar"))
-		assertLines(t, "INF foo  bar.k1=true bar.k2=2 bar.k3=3 bar.k4=bar")
+		assertLinesWithTime(t, "9:45AM INF foo  bar.k1=true bar.k2=2 bar.k3=3 bar.k4=bar")
 	})
 
 	t.Run("AttrGroupEmptyAttr", func(t *testing.T) {
 		log.Info("foo", slog.Group("bar", slog.Attr{}, "k1", true, "k2", 2, "k3", 3.0, "k4", "bar")) //nolint:loggercheck
-		assertLines(t, "INF foo  bar.k1=true bar.k2=2 bar.k3=3 bar.k4=bar")
+		assertLinesWithTime(t, "9:45AM INF foo  bar.k1=true bar.k2=2 bar.k3=3 bar.k4=bar")
 	})
 
 	t.Run("TrailingNewlineMessage", func(t *testing.T) {
 		log.Info("foo\n")
-		assertLines(t, "INF foo")
+		assertLinesWithTime(t, "9:45AM INF foo")
 	})
 
 	t.Run("TrailingNewlineMessageWithAttr", func(t *testing.T) {
 		log.Info("foo\n", "k1", true)
-		assertLines(t,
-			"INF foo",
+		assertLinesWithTime(t,
+			"9:45AM INF foo",
 			"  k1=true",
 		)
 	})
 
 	t.Run("MultilineAttrValue", func(t *testing.T) {
 		log.Info("foo", "k1", "bar\nbaz\nqux", "k2", "quux")
-		assertLines(t,
-			"INF foo  ",
+		assertLinesWithTime(t,
+			"9:45AM INF foo  ",
 			"  k1=",
 			"    | bar",
 			"    | baz",
@@ -224,8 +232,8 @@ func TestHandler_formatting(t *testing.T) {
 		log := log.WithGroup("a").WithGroup("b")
 		log.Info("foo", slog.Group("c", "d", "foo\nbar\nbaz", "e", "qux"))
 
-		assertLines(t,
-			"INF foo  ",
+		assertLinesWithTime(t,
+			"9:45AM INF foo  ",
 			"  a.b.c.d=",
 			"    | foo",
 			"    | bar",
@@ -236,29 +244,29 @@ func TestHandler_formatting(t *testing.T) {
 
 	t.Run("LeadingWhitespace", func(t *testing.T) {
 		log.Info(" foo")
-		assertLines(t, "INF  foo")
+		assertLinesWithTime(t, "9:45AM INF  foo")
 	})
 
 	t.Run("TrailingWhitespace", func(t *testing.T) {
 		log.Info("foo ")
-		assertLines(t, "INF foo")
+		assertLinesWithTime(t, "9:45AM INF foo")
 	})
 
 	t.Run("Prefix", func(t *testing.T) {
 		log := slog.New(handler.WithPrefix("prefix"))
 
 		log.Info("foo")
-		assertLines(t, "INF prefix: foo")
+		assertLinesWithTime(t, "9:45AM INF prefix: foo")
 	})
 
 	t.Run("MultilineMessageWithPrefix", func(t *testing.T) {
 		log := slog.New(handler.WithPrefix("prefix"))
 
 		log.Info("foo\nbar\nbaz")
-		assertLines(t,
-			"INF prefix: foo",
-			"INF prefix: bar",
-			"INF prefix: baz",
+		assertLinesWithTime(t,
+			"9:45AM INF prefix: foo",
+			"9:45AM INF prefix: bar",
+			"9:45AM INF prefix: baz",
 		)
 	})
 
@@ -270,20 +278,28 @@ func TestHandler_formatting(t *testing.T) {
 		downLog.Warn("baz")
 		downLog.Error("qux")
 
-		assertLines(t,
-			"DBG bar",
-			"INF baz",
-			"WRN qux")
+		assertLinesWithTime(t,
+			"9:45AM DBG bar",
+			"9:45AM INF baz",
+			"9:45AM WRN qux")
 
 		log.Debug("quux")
-		assertLines(t,
-			"DBG quux")
+		assertLinesWithTime(t,
+			"9:45AM DBG quux")
 	})
 }
 
 func TestHandler_WithLevel(t *testing.T) {
 	var buffer strings.Builder
-	handler := silog.NewHandler(&buffer, nil)
+	handler := silog.NewHandler(&buffer, &silog.Options{
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return attr
+		},
+		Style: silog.PlainStyle(),
+	})
 	rootLogger := slog.New(handler)
 
 	rootLogger.Debug("foo")
@@ -398,6 +414,12 @@ func TestHandler_multilineMessageStyling(t *testing.T) {
 	log := slog.New(silog.NewHandler(&buffer, &silog.Options{
 		Level: slog.LevelDebug,
 		Style: style,
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 && attr.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return attr
+		},
 	}))
 
 	log.Info("foo\nbar")

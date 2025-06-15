@@ -1,7 +1,6 @@
 package silog
 
 import (
-	"context"
 	"log/slog"
 	"strings"
 	"testing"
@@ -12,27 +11,34 @@ import (
 )
 
 func TestLogHandler_slogtest(t *testing.T) {
-	var (
-		buffer strings.Builder
-		saver  saveTimeHandler
-	)
+	var buffer strings.Builder
 	slogtest.Run(t, func(*testing.T) slog.Handler {
 		buffer.Reset()
 
-		saver.Handler = NewHandler(&buffer, &Options{
-			Level: slog.LevelDebug,
-			Style: PlainStyle(),
+		return NewHandler(&buffer, &Options{
+			Level:      slog.LevelDebug,
+			Style:      PlainStyle(),
+			TimeFormat: time.RFC3339,
 		})
-		return &saver
 	}, func(t *testing.T) map[string]any {
 		attrs := make(map[string]any)
-		if !saver.saved.IsZero() {
-			attrs[slog.TimeKey] = saver.saved
-		}
 
 		line := strings.TrimSpace(buffer.String())
-		lvlstr, line, ok := strings.Cut(line, lvlDelim)
-		require.True(t, ok, "missing level delimiter: %q", buffer.String())
+
+		timestr, line, ok := strings.Cut(line, " ")
+		require.True(t, ok, "missing time delimiter: %q", buffer.String())
+
+		var lvlstr string
+		if ts, err := time.Parse(time.RFC3339, timestr); err == nil {
+			attrs[slog.TimeKey] = ts
+
+			lvlstr, line, ok = strings.Cut(line, lvlDelim)
+			require.True(t, ok, "missing level delimiter: %q", buffer.String())
+		} else {
+			// There's no time if the time was a zero value
+			// so use the timestr as the lvl string.
+			lvlstr = timestr
+		}
 
 		switch lvlstr {
 		case "DBG":
@@ -79,15 +85,4 @@ func TestLogHandler_slogtest(t *testing.T) {
 		t.Logf("attrs: %q", attrs)
 		return attrs
 	})
-}
-
-type saveTimeHandler struct {
-	slog.Handler
-
-	saved time.Time
-}
-
-func (h *saveTimeHandler) Handle(ctx context.Context, rec slog.Record) error {
-	h.saved = rec.Time
-	return h.Handler.Handle(ctx, rec)
 }

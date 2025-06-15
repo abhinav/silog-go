@@ -11,8 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/mattn/go-isatty"
 )
 
 // Options defines options for the logger.
@@ -21,14 +19,23 @@ type Options struct {
 	// It must be one of the supported log levels.
 	// The default is LevelInfo.
 	Level slog.Leveler // optional
-	// TODO: rename to Leveler
 
 	// Style is the style to use for the logger.
-	// If unset, the style will be picked based on whether
-	// the output is a terminal or not.
+	// If unset, [DefaultStyle] is used.
+	// You may use [PlainStyle] to get output with no colors.
 	Style *Style // optional
 
-	// TODO: kitchen time by default
+	// TimeFormat is the format to use when rendering timestamps.
+	// If unset, time.Kitchen will be used.
+	TimeFormat string // optional
+
+	// ReplaceAttr, if set, is called for each attribute
+	// before it is rendered.
+	//
+	// For time and level, it is called with slog.TimeKey and slog.LevelKey
+	// respectively.
+	// It is not called if the associated time for the record is zero.
+	ReplaceAttr func(groups []string, attr slog.Attr) slog.Attr // optional
 }
 
 // Handler is a slog.Handler that writes to an io.Writer
@@ -61,6 +68,12 @@ type Handler struct {
 
 	// prefix is the prefix to use for the logger.
 	prefix string
+
+	// timeFormat is the format to use when rendering timestamps.
+	timeFormat string
+
+	// replaceAttr is the attribute replacement function.
+	replaceAttr func([]string, slog.Attr) slog.Attr
 }
 
 var _ slog.Handler = (*Handler)(nil)
@@ -74,17 +87,8 @@ var _ slog.Handler = (*Handler)(nil)
 // in a single Writer.Write call.
 func NewHandler(w io.Writer, opts *Options) *Handler {
 	opts = cmp.Or(opts, &Options{})
-
-	style := opts.Style
-	if style == nil {
-		if fder, ok := w.(interface {
-			Fd() uintptr
-		}); ok && isatty.IsTerminal(fder.Fd()) {
-			style = DefaultStyle()
-		} else {
-			style = PlainStyle()
-		}
-	}
+	style := cmp.Or(opts.Style, DefaultStyle())
+	timeFormat := cmp.Or(opts.TimeFormat, time.Kitchen)
 
 	lvl := opts.Level
 	if lvl == nil {
@@ -92,10 +96,12 @@ func NewHandler(w io.Writer, opts *Options) *Handler {
 	}
 
 	return &Handler{
-		lvl:   lvl,
-		style: style,
-		out:   w,
-		outMu: new(sync.Mutex),
+		lvl:         lvl,
+		style:       style,
+		out:         w,
+		outMu:       new(sync.Mutex),
+		timeFormat:  timeFormat,
+		replaceAttr: opts.ReplaceAttr,
 	}
 }
 
@@ -105,6 +111,7 @@ func (h *Handler) Enabled(_ context.Context, lvl slog.Level) bool {
 }
 
 const (
+	timeDelim    = " "  // separator between time and level
 	lvlDelim     = " "  // separator between level and message
 	groupDelim   = "."  // separator between group names
 	msgAttrDelim = "  " // separator between message and attributes
@@ -116,15 +123,62 @@ func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 	bs := *takeBuf()
 	defer releaseBuf(&bs)
 
-	rec.Level += slog.Level(h.lvlOffset)
-	lvlString := h.style.LevelLabels[rec.Level].String()
-	// TODO: Use empty string with no space for unknown level
+	// Level
+	lvl := rec.Level + slog.Level(h.lvlOffset)
+	var lvlString string
+	if h.replaceAttr == nil {
+		lvlString = h.style.LevelLabels[rec.Level].String()
+	} else {
+		attr := h.replaceAttr(nil, slog.Any(slog.LevelKey, lvl))
+		if !attr.Equal(slog.Attr{}) {
+			if lvl, ok := attr.Value.Any().(slog.Level); ok {
+				// If the value is a known slog.Level,
+				// we can use the level label from the style.
+				lvlString = h.style.LevelLabels[lvl].String()
+			} else {
+				// Otherwise, just use the string representation.
+				lvlString = attr.Value.String()
+				// TODO: silog.Styled(lipgloss.Style, slog.Attr)
+			}
+		}
+	}
 
-	// If the message is multi-line, we'll need to prepend the level
-	// to each line.
+	// Time
+	var timeString string
+	if !rec.Time.IsZero() {
+		if h.replaceAttr == nil {
+			timeString = rec.Time.Format(h.timeFormat)
+		} else {
+			timeAttr := h.replaceAttr(nil, slog.Time(slog.TimeKey, rec.Time))
+			switch {
+			case timeAttr.Equal(slog.Attr{}):
+				// Skip the time.
+
+			case timeAttr.Value.Kind() == slog.KindTime:
+				// If the value is a time, format it with TimeFormat.
+				timeString = timeAttr.Value.Time().Format(h.timeFormat)
+
+			default:
+				// Otherwise, just use the string representation of the value.
+				timeString = timeAttr.Value.String()
+			}
+		}
+	}
+	if timeString != "" {
+		timeString = h.style.Time.Render(timeString)
+	}
+
+	// If the message is multi-line,
+	// we'll need to prepend the level and time to each line.
 	for line := range strings.Lines(rec.Message) {
-		bs = append(bs, lvlString...)
-		bs = append(bs, lvlDelim...)
+		if timeString != "" {
+			bs = append(bs, timeString...)
+			bs = append(bs, timeDelim...)
+		}
+		if lvlString != "" {
+			bs = append(bs, lvlString...)
+			bs = append(bs, lvlDelim...)
+		}
 
 		var msg bytes.Buffer
 		if h.prefix != "" {
@@ -157,11 +211,7 @@ func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 	}
 
 	// Write the attributes.
-	formatter := attrFormatter{
-		buf:    bs,
-		style:  h.style,
-		groups: slices.Clone(h.groups),
-	}
+	formatter := h.attrFormatter(bs)
 	rec.Attrs(func(attr slog.Attr) bool {
 		formatter.FormatAttr(attr)
 		return true
@@ -178,11 +228,7 @@ func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 }
 
 func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	f := attrFormatter{
-		buf:    slices.Clone(h.attrs),
-		groups: slices.Clone(h.groups),
-		style:  h.style,
-	}
+	f := h.attrFormatter(slices.Clone(h.attrs))
 	for _, attr := range attrs {
 		f.FormatAttr(attr)
 	}
@@ -229,14 +275,30 @@ type attrFormatter struct {
 	buf    []byte
 	style  *Style
 	groups []string
+
+	replaceAttr func([]string, slog.Attr) slog.Attr
+}
+
+func (h *Handler) attrFormatter(buf []byte) *attrFormatter {
+	return &attrFormatter{
+		buf:         buf,
+		style:       h.style,
+		groups:      slices.Clone(h.groups),
+		replaceAttr: h.replaceAttr,
+	}
 }
 
 func (f *attrFormatter) FormatAttr(attr slog.Attr) {
+	attr.Value = attr.Value.Resolve()
+	if f.replaceAttr != nil {
+		attr = f.replaceAttr(f.groups, attr)
+	}
+
 	if attr.Equal(slog.Attr{}) {
 		return // skip empty attributes
 	}
 
-	value := attr.Value.Resolve()
+	value := attr.Value
 	if value.Kind() == slog.KindGroup {
 		// Groups just get splatted into their attributes
 		// prefixed with the group name.
