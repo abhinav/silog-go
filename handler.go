@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// Options defines options for the logger.
-type Options struct {
+// HandlerOptions defines options for constructing a [Handler].
+type HandlerOptions struct {
 	// Level is the minimum log level to log.
 	// It must be one of the supported log levels.
 	// The default is LevelInfo.
@@ -85,8 +85,8 @@ var _ slog.Handler = (*Handler)(nil)
 // and is safe to use from multiple goroutines.
 // Each log message is posted to the output writer
 // in a single Writer.Write call.
-func NewHandler(w io.Writer, opts *Options) *Handler {
-	opts = cmp.Or(opts, &Options{})
+func NewHandler(w io.Writer, opts *HandlerOptions) *Handler {
+	opts = cmp.Or(opts, &HandlerOptions{})
 	style := cmp.Or(opts.Style, DefaultStyle())
 	timeFormat := cmp.Or(opts.TimeFormat, time.Kitchen)
 
@@ -407,7 +407,7 @@ func (f *attrFormatter) FormatAttr(attr slog.Attr) {
 
 	valueStyle, hasStyle := f.style.Values[attr.Key]
 	if isMultiline {
-		prefixStyle := f.style.MultilinePrefix
+		prefixStyle := f.style.MultilineValuePrefix
 		if hasStyle {
 			prefixStyle = prefixStyle.Foreground(valueStyle.GetForeground())
 		}

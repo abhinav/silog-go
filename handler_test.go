@@ -16,7 +16,7 @@ import (
 
 func TestHandler_formatting(t *testing.T) {
 	var buffer strings.Builder
-	handler := silog.NewHandler(&buffer, &silog.Options{
+	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
 		Style: silog.PlainStyle(),
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
@@ -306,7 +306,7 @@ func TestHandler_formatting(t *testing.T) {
 
 func TestHandler_WithLevel(t *testing.T) {
 	var buffer strings.Builder
-	handler := silog.NewHandler(&buffer, &silog.Options{
+	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
 			if len(groups) == 0 && attr.Key == slog.TimeKey {
 				return slog.Attr{}
@@ -369,7 +369,7 @@ func TestHandler_Enabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := silog.NewHandler(io.Discard, &silog.Options{
+			h := silog.NewHandler(io.Discard, &silog.HandlerOptions{
 				Level: tt.leveler,
 				Style: silog.PlainStyle(),
 			})
@@ -390,7 +390,7 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 	)
 
 	var buffer strings.Builder
-	log := slog.New(silog.NewHandler(&buffer, &silog.Options{
+	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
 		Style: silog.PlainStyle(),
 	}))
@@ -426,7 +426,7 @@ func TestHandler_multilineMessageStyling(t *testing.T) {
 	style.Messages[slog.LevelInfo] = lipgloss.NewStyle().Bold(true)
 
 	var buffer strings.Builder
-	log := slog.New(silog.NewHandler(&buffer, &silog.Options{
+	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
 		Style: style,
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
