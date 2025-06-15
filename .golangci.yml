@@ -1,0 +1,52 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    # golangci-lint defaults:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    # Non-default linters:
+    - errname       # standardized error naming
+    - errorlint     # Go 1.13 error wrapping
+    - gocritic      # general issues
+    - intrange      # prefer "range N" over "x := 0; x < N; x++".
+    - makezero      # catch make([]T, N) used with append
+    - musttag       # serialized structs must be tagged
+    - nolintlint    # nolint rules
+    - perfsprint    # fmt.Sprintf alternatives
+    - revive        # style
+    - unconvert     # unnecessary type conversions
+    - usetesting    # prefer t.TempDir, t.Chdir, etc.
+
+  settings:
+    govet:
+      enable:
+        - nilness
+        - reflectvaluecompare
+        - sortslice
+        - unusedwrite
+  exclusions:
+    generated: lax
+    rules:
+      # staticcheck already has smarter checks for empty blocks.
+      # revive's empty-block linter has false positives.
+      # For example, as of writing this, the following is not allowed.
+      #   for foo() { }
+      - linters: [revive]
+        text: 'empty-block: this block is empty, you can remove it'
+
+issues:
+  # Print all issues reported by all linters.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofumpt
+  exclusions:
+    generated: lax

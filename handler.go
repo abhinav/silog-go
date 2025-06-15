@@ -105,6 +105,10 @@ func NewHandler(w io.Writer, opts *Options) *Handler {
 	}
 }
 
+// Enabled reports whether the handler is enabled for the given level.
+//
+// If Enabled returnsf alse, Handle should not be called for a record
+// at that level.
 func (h *Handler) Enabled(_ context.Context, lvl slog.Level) bool {
 	lvl += slog.Level(h.lvlOffset)
 	return h.lvl.Level() <= lvl
@@ -119,6 +123,13 @@ const (
 	indent       = "  " // indentation for multi-line attributes
 )
 
+// Handle writes the given log record to the output writer.
+//
+// The write is synchronized with a mutex,
+// so that multiple copies of the handler
+// (e.g. those made with WithAttrs, WithPrefix, etc.)
+// can be used concurrently without issues
+// as long as they all are built from the same base handler.
 func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 	bs := *takeBuf()
 	defer releaseBuf(&bs)
@@ -227,6 +238,9 @@ func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 	return err
 }
 
+// WithAttrs returns a copy of this handler
+// that will always include the given slog attributes
+// in its output.
 func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	f := h.attrFormatter(slices.Clone(h.attrs))
 	for _, attr := range attrs {
@@ -234,15 +248,18 @@ func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	}
 	bs := f.buf
 
-	newL := *h
-	newL.attrs = bs
-	return &newL
+	newH := *h
+	newH.attrs = bs
+	return &newH
 }
 
+// WithGroup returns a copy of this handler
+// that will always group the attributes that follow
+// under the given group name.
 func (h *Handler) WithGroup(name string) slog.Handler {
-	newL := *h
-	newL.groups = append(slices.Clone(h.groups), name)
-	return &newL
+	newH := *h
+	newH.groups = append(slices.Clone(h.groups), name)
+	return &newH
 }
 
 // WithLevel returns a new handler with the given leveler,
@@ -250,25 +267,36 @@ func (h *Handler) WithGroup(name string) slog.Handler {
 //
 // It will write to the same output writer as this handler.
 func (h *Handler) WithLevel(lvl slog.Leveler) slog.Handler {
-	newL := *h
-	newL.lvl = lvl
-	return &newL
+	newH := *h
+	newH.lvl = lvl
+	return &newH
 }
 
 // WithPrefix returns a new handler with the given prefix
-func (l *Handler) WithPrefix(prefix string) slog.Handler {
-	newL := *l
-	newL.prefix = prefix
-	return &newL
+func (h *Handler) WithPrefix(prefix string) slog.Handler {
+	newH := *h
+	newH.prefix = prefix
+	return &newH
 }
 
-// TODO: rename to WithLevelOffset?
-// TODO: or a general level remapper
-// that includes a std level downgrader
-func (l *Handler) WithDowngrade(n int) slog.Handler {
-	newL := *l
-	newL.lvlOffset -= n
-	return &newL
+// WithDowngrade returns a new handler
+// that will downgrade the log level for each log message
+// by the given number of levels.
+//
+// For example:
+//
+//	handler = handler.WithDowngrade(4)
+//	// log/slog levels are offset by 4.
+//
+// This will result in [slog.LevelInfo] messages
+// being written as [slog.LevelDebug] messages.
+func (h *Handler) WithDowngrade(n int) slog.Handler {
+	// TODO: rename to WithLevelOffset?
+	// TODO: or a general level remapper
+	// that includes a std level downgrader
+	newH := *h
+	newH.lvlOffset -= n
+	return &newH
 }
 
 type attrFormatter struct {
