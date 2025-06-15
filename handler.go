@@ -65,12 +65,19 @@ type Handler struct {
 
 var _ slog.Handler = (*Handler)(nil)
 
-func NewHandler(out io.Writer, opts *Options) *Handler {
+// NewHandler constructs a silog Handler for use with slog.
+// Log output is written to the given io.Writer.
+//
+// The Handler synchronizes writes to the output writer,
+// and is safe to use from multiple goroutines.
+// Each log message is posted to the output writer
+// in a single Writer.Write call.
+func NewHandler(w io.Writer, opts *Options) *Handler {
 	opts = cmp.Or(opts, &Options{})
 
 	style := opts.Style
 	if style == nil {
-		if fder, ok := out.(interface {
+		if fder, ok := w.(interface {
 			Fd() uintptr
 		}); ok && isatty.IsTerminal(fder.Fd()) {
 			style = DefaultStyle()
@@ -87,14 +94,14 @@ func NewHandler(out io.Writer, opts *Options) *Handler {
 	return &Handler{
 		lvl:   lvl,
 		style: style,
+		out:   w,
 		outMu: new(sync.Mutex),
-		out:   out,
 	}
 }
 
-func (l *Handler) Enabled(_ context.Context, lvl slog.Level) bool {
-	lvl += slog.Level(l.lvlOffset)
-	return l.lvl.Level() <= lvl
+func (h *Handler) Enabled(_ context.Context, lvl slog.Level) bool {
+	lvl += slog.Level(h.lvlOffset)
+	return h.lvl.Level() <= lvl
 }
 
 const (
@@ -105,12 +112,12 @@ const (
 	indent       = "  " // indentation for multi-line attributes
 )
 
-func (l *Handler) Handle(_ context.Context, rec slog.Record) error {
+func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 	bs := *takeBuf()
 	defer releaseBuf(&bs)
 
-	rec.Level += slog.Level(l.lvlOffset)
-	lvlString := l.style.LevelLabels[rec.Level].String()
+	rec.Level += slog.Level(h.lvlOffset)
+	lvlString := h.style.LevelLabels[rec.Level].String()
 	// TODO: Use empty string with no space for unknown level
 
 	// If the message is multi-line, we'll need to prepend the level
@@ -120,9 +127,9 @@ func (l *Handler) Handle(_ context.Context, rec slog.Record) error {
 		bs = append(bs, lvlDelim...)
 
 		var msg bytes.Buffer
-		if l.prefix != "" {
-			msg.WriteString(l.prefix)
-			msg.WriteString(l.style.PrefixDelimiter.Render())
+		if h.prefix != "" {
+			msg.WriteString(h.prefix)
+			msg.WriteString(h.style.PrefixDelimiter.Render())
 		}
 
 		// line may end with \n.
@@ -134,7 +141,7 @@ func (l *Handler) Handle(_ context.Context, rec slog.Record) error {
 		}
 		msg.WriteString(line)
 
-		line = l.style.Messages[rec.Level].Render(msg.String())
+		line = h.style.Messages[rec.Level].Render(msg.String())
 		bs = append(bs, line...)
 		if trailingNewline {
 			bs = append(bs, '\n')
@@ -145,15 +152,15 @@ func (l *Handler) Handle(_ context.Context, rec slog.Record) error {
 	bs = append(bs, msgAttrDelim...)
 
 	// withAttrs attributes are serialized into the buffer
-	if len(l.attrs) > 0 {
-		bs = append(bs, l.attrs...)
+	if len(h.attrs) > 0 {
+		bs = append(bs, h.attrs...)
 	}
 
 	// Write the attributes.
 	formatter := attrFormatter{
 		buf:    bs,
-		style:  l.style,
-		groups: slices.Clone(l.groups),
+		style:  h.style,
+		groups: slices.Clone(h.groups),
 	}
 	rec.Attrs(func(attr slog.Attr) bool {
 		formatter.FormatAttr(attr)
@@ -164,39 +171,40 @@ func (l *Handler) Handle(_ context.Context, rec slog.Record) error {
 	// Always a single trailing newline.
 	bs = append(bytes.TrimRight(bs, " \n"), '\n')
 
-	l.outMu.Lock()
-	defer l.outMu.Unlock()
-	_, err := l.out.Write(bs)
+	h.outMu.Lock()
+	defer h.outMu.Unlock()
+	_, err := h.out.Write(bs)
 	return err
 }
 
-func (l *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	f := attrFormatter{
-		buf:    slices.Clone(l.attrs),
-		groups: slices.Clone(l.groups),
-		style:  l.style,
+		buf:    slices.Clone(h.attrs),
+		groups: slices.Clone(h.groups),
+		style:  h.style,
 	}
 	for _, attr := range attrs {
 		f.FormatAttr(attr)
 	}
 	bs := f.buf
 
-	newL := *l
+	newL := *h
 	newL.attrs = bs
 	return &newL
 }
 
-func (l *Handler) WithGroup(name string) slog.Handler {
-	newL := *l
-	newL.groups = append(slices.Clone(l.groups), name)
+func (h *Handler) WithGroup(name string) slog.Handler {
+	newL := *h
+	newL.groups = append(slices.Clone(h.groups), name)
 	return &newL
 }
 
-// WithLeveler returns a new handler with the given leveler
-// but with the same attributes and groups as this handler.
+// WithLevel returns a new handler with the given leveler,
+// retaining all other attributes and groups.
+//
 // It will write to the same output writer as this handler.
-func (l *Handler) WithLeveler(lvl slog.Leveler) slog.Handler {
-	newL := *l
+func (h *Handler) WithLevel(lvl slog.Leveler) slog.Handler {
+	newL := *h
 	newL.lvl = lvl
 	return &newL
 }
