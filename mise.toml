@@ -1,15 +1,12 @@
 [settings]
 experimental = true
 
-[alias]
-requiredfield = "go:go.abhg.dev/requiredfield/cmd/requiredfield"
-
 [tools]
 go = "latest"
 "aqua:golangci/golangci-lint" = "latest"
 "ubi:miniscruff/changie" = "latest"
 "ubi:abhinav/doc2go" = "latest"
-requiredfield = "0.5.0"
+"ubi:abhinav/requiredfield" = "latest"
 
 [tasks.all]
 description = "Build, lint and test the code."
