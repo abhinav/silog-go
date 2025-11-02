@@ -1,19 +1,35 @@
-[tools."aqua:golangci/golangci-lint"]
-version = "2.1.6"
+[[tools."aqua:golangci/golangci-lint"]]
+version = "2.6.0"
 backend = "aqua:golangci/golangci-lint"
 
-[tools.go]
-version = "1.24.4"
+[tools."aqua:golangci/golangci-lint".platforms.macos-arm64]
+checksum = "sha256:d13fa3539d65f4869782b850c14559813877aa18e99a81ab40413a34971a6462"
+size = 13802652
+url = "https://github.com/golangci/golangci-lint/releases/download/v2.6.0/golangci-lint-2.6.0-darwin-arm64.tar.gz"
+
+[[tools.go]]
+version = "1.25.3"
 backend = "core:go"
 
-[tools.requiredfield]
-version = "0.5.0"
-backend = "go:go.abhg.dev/requiredfield/cmd/requiredfield"
+[tools.go.platforms.macos-arm64]
+checksum = "sha256:7c083e3d2c00debfeb2f77d9a4c00a1aac97113b89b9ccc42a90487af3437382"
+size = 58028114
+url = "https://dl.google.com/go/go1.25.3.darwin-arm64.tar.gz"
 
-[tools."ubi:abhinav/doc2go"]
-version = "0.8.1"
+[[tools."ubi:abhinav/doc2go"]]
+version = "0.9.1"
 backend = "ubi:abhinav/doc2go"
 
-[tools."ubi:miniscruff/changie"]
-version = "1.22.0"
+[tools."ubi:abhinav/doc2go".platforms.macos-arm64-doc2go]
+checksum = "blake3:cc38468677cc6797302514898311280d5e21df72976d6139342e6b531b58d0b5"
+
+[[tools."ubi:abhinav/requiredfield"]]
+version = "0.7.1"
+backend = "ubi:abhinav/requiredfield"
+
+[[tools."ubi:miniscruff/changie"]]
+version = "1.22.1"
 backend = "ubi:miniscruff/changie"
+
+[tools."ubi:miniscruff/changie".platforms.macos-arm64-changie]
+checksum = "blake3:b9d26f9ad98ed08be15d87af8db62965e693d5cdd21e46f0fa9edf2de435c5e8"
