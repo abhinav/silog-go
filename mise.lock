@@ -27,6 +27,10 @@ checksum = "blake3:cc38468677cc6797302514898311280d5e21df72976d6139342e6b531b58d
 version = "0.7.1"
 backend = "ubi:abhinav/requiredfield"
 
+[[tools."ubi:abhinav/stitchmd"]]
+version = "0.9.0"
+backend = "ubi:abhinav/stitchmd"
+
 [[tools."ubi:miniscruff/changie"]]
 version = "1.22.1"
 backend = "ubi:miniscruff/changie"
