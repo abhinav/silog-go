@@ -1,0 +1,6 @@
+[[tools."ubi:charmbracelet/freeze"]]
+version = "0.2.2"
+backend = "ubi:charmbracelet/freeze"
+
+[tools."ubi:charmbracelet/freeze".platforms.macos-arm64-freeze]
+checksum = "blake3:d9f20a0ac18317d7ce5ed6feba04179faba676e5a71a3a05b0758fca1ac61e56"
