@@ -7,6 +7,7 @@ go = "latest"
 "ubi:miniscruff/changie" = "latest"
 "ubi:abhinav/doc2go" = "latest"
 "ubi:abhinav/requiredfield" = "latest"
+"ubi:abhinav/stitchmd" = "latest"
 
 [tasks.all]
 description = "Build, lint and test the code."
