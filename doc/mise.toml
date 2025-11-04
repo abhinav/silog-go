@@ -1,2 +1,6 @@
 [tools]
 "ubi:charmbracelet/freeze" = "latest"
+
+[tasks."test:examples"]
+description = "Run all examples"
+run = "go run ./cmd/generate-examples-md"

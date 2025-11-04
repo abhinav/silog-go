@@ -46,3 +46,23 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+
+  examples:
+    name: Check examples
+    runs-on: ubuntu-latest
+    env:
+      MISE_ENV: stable
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up mise
+      uses: jdx/mise-action@v3
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        working_directory: doc
+        cache_key_prefix: mise-v0-stable
+
+    - name: Run examples
+      run: cd doc && mise run test:examples
+
