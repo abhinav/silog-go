@@ -22,8 +22,16 @@ description = "Run all linters"
 depends = ["lint:*"]
 
 [tasks.test]
+description = "Run all tests"
+depends = ["test:*"]
+
+[tasks."test:unit"]
 description = "Run tests"
 run = "go test -race ./..."
+
+[tasks."test:examples"]
+description = "Run all examples"
+run = "cd doc && mise run test:examples"
 
 [tasks.cover]
 description = "Run tests with coverage"
