@@ -138,7 +138,7 @@ func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 	lvl := rec.Level + slog.Level(h.lvlOffset)
 	var lvlString string
 	if h.replaceAttr == nil {
-		lvlString = h.style.LevelLabels[rec.Level].String()
+		lvlString = h.style.LevelLabels[lvl].String()
 	} else {
 		attr := h.replaceAttr(nil, slog.Any(slog.LevelKey, lvl))
 		if !attr.Equal(slog.Attr{}) {
@@ -206,7 +206,7 @@ func (h *Handler) Handle(_ context.Context, rec slog.Record) error {
 		}
 		msg.WriteString(line)
 
-		line = h.style.Messages[rec.Level].Render(msg.String())
+		line = h.style.Messages[lvl].Render(msg.String())
 		bs = append(bs, line...)
 		if trailingNewline {
 			bs = append(bs, '\n')
