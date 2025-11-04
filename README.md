@@ -96,8 +96,8 @@ logger.Info("Operation failed",
 Handler-level prefixes are used to distinguish log messages posted by different subsystems or components.
 
 ```go
-dbHandler := baseHandler.SetPrefix("database")
-cacheHandler := baseHandler.SetPrefix("cache")
+dbHandler := baseHandler.WithPrefix("database")
+cacheHandler := baseHandler.WithPrefix("cache")
 
 dbLogger := slog.New(dbHandler)
 cacheLogger := slog.New(cacheHandler)
@@ -113,7 +113,7 @@ cacheLogger.Warn("Cache miss rate high")
 Prefixes are preserved across multi-line messages, appearing on each line of output.
 
 ```go
-log := slog.New(h.SetPrefix("worker"))
+log := slog.New(h.WithPrefix("worker"))
 
 log.Info("Task completed:\n- Processed 1000 items\n- Generated 50 reports\n- Sent 25 notifications")
 ```

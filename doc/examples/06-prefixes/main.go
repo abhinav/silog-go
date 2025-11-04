@@ -18,8 +18,8 @@ func main() {
 	})
 
 	// <EXAMPLE>
-	dbHandler := baseHandler.SetPrefix("database")
-	cacheHandler := baseHandler.SetPrefix("cache")
+	dbHandler := baseHandler.WithPrefix("database")
+	cacheHandler := baseHandler.WithPrefix("cache")
 
 	dbLogger := slog.New(dbHandler)
 	cacheLogger := slog.New(cacheHandler)

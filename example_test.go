@@ -59,7 +59,7 @@ func Example_noLabel() {
 	// DBG This is a debug message
 }
 
-func ExampleHandler_SetPrefix() {
+func ExampleHandler_WithPrefix() {
 	handler := silog.NewHandler(os.Stdout, &silog.HandlerOptions{
 		Style: silog.PlainStyle(nil),
 		// To keep the test output clean easy to test,
@@ -67,8 +67,8 @@ func ExampleHandler_SetPrefix() {
 		ReplaceAttr: skipTime,
 	})
 
-	h1 := handler.SetPrefix("example")
-	h2 := h1.SetPrefix("")
+	h1 := handler.WithPrefix("example")
+	h2 := h1.WithPrefix("")
 
 	slog.New(h1).Info("Single prefix")
 	slog.New(h2).Info("No prefix")
