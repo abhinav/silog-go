@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -33,7 +34,13 @@ func main() {
 func run(log *log.Logger) error {
 	dir := flag.String("dir", "examples", "directory containing example subdirectories")
 	out := flag.String("out", "examples.md", "output markdown file")
+	runPattern := flag.String("run", ".", "regex pattern to filter which examples to execute (defaults to all)")
 	flag.Parse()
+
+	runRegex, err := regexp.Compile(*runPattern)
+	if err != nil {
+		return fmt.Errorf("invalid run pattern: %w", err)
+	}
 
 	entries, err := os.ReadDir(*dir)
 	if err != nil {
@@ -49,7 +56,15 @@ func run(log *log.Logger) error {
 		if !entry.IsDir() {
 			continue
 		}
-		ex, err := loadExample(log, *dir, entry.Name())
+
+		shouldExecute := runRegex.MatchString(entry.Name())
+		if shouldExecute {
+			log.Printf("Executing example: %s", entry.Name())
+		} else {
+			log.Printf("Skipping execution for: %s (will use existing screenshot)", entry.Name())
+		}
+
+		ex, err := loadExample(log, *dir, entry.Name(), shouldExecute)
 		if err != nil {
 			return fmt.Errorf("loading example %s: %w", entry.Name(), err)
 		}
@@ -73,7 +88,7 @@ func run(log *log.Logger) error {
 	return nil
 }
 
-func loadExample(log *log.Logger, dir, exampleDir string) (*example, error) {
+func loadExample(log *log.Logger, dir, exampleDir string, shouldExecute bool) (*example, error) {
 	mainPath := filepath.Join(dir, exampleDir, "main.go")
 	content, err := os.ReadFile(mainPath)
 	if err != nil {
@@ -116,21 +131,30 @@ func loadExample(log *log.Logger, dir, exampleDir string) (*example, error) {
 	}
 	code := strings.Join(codeParts, "\n\n")
 
-	// Run freeze command
-	cmd := exec.Command("freeze", "--config", "freeze.json",
-		"--execute", "go run ./examples/"+exampleDir,
-		"--output", filepath.Join("img", "examples", exampleDir+".svg"))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("running freeze: %w", err)
+	screenshotPath := filepath.Join("img", "examples", exampleDir+".svg")
+
+	// Run freeze command only if shouldExecute is true.
+	if shouldExecute {
+		cmd := exec.Command("freeze", "--config", "freeze.json",
+			"--execute", "go run ./examples/"+exampleDir,
+			"--output", screenshotPath)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return nil, fmt.Errorf("running freeze: %w", err)
+		}
+	} else {
+		// Verify existing screenshot exists.
+		if _, err := os.Stat(screenshotPath); err != nil {
+			return nil, fmt.Errorf("screenshot not found and execution skipped: %w (hint: run without -run flag to generate all screenshots)", err)
+		}
 	}
 
 	return &example{
 		Name:       exampleDir,
 		Doc:        docComment,
 		Code:       code,
-		Screenshot: filepath.Join("img", "examples", exampleDir+".svg"),
+		Screenshot: screenshotPath,
 	}, nil
 }
 

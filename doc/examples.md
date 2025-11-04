@@ -96,8 +96,7 @@ Prefixes are preserved across multi-line messages, appearing on each line of out
 
 
 ```go
-h.SetPrefix("worker")
-log := slog.New(h)
+log := slog.New(h.SetPrefix("worker"))
 
 log.Info("Task completed:\n- Processed 1000 items\n- Generated 50 reports\n- Sent 25 notifications")
 ```

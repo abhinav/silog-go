@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg width="331.67" height="134.00" xmlns="http://www.w3.org/2000/svg">
+<svg width="398.33" height="134.00" xmlns="http://www.w3.org/2000/svg">
 <style>
 @font-face {
 	font-family: &apos;JetBrains Mono&apos;;
@@ -8,8 +8,8 @@
 	font-weight: normal;
 	font-style: normal;
 }
-</style><rect width="309.67" height="112.00" fill="#171717" rx="8.00" ry="8.00" stroke="#515151" stroke-width="1.00" x="10.00px" y="10.00px"/>
+</style><rect width="376.33" height="112.00" fill="#171717" rx="8.00" ry="8.00" stroke="#515151" stroke-width="1.00" x="10.00px" y="10.00px"/>
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#c4c4c4" clip-path="url(#terminalMask)">
-<text x="20.00px" y="51.80px" xml:space="preserve"><tspan xml:space="preserve">4:54PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> Task completed:</tspan></text><text x="20.00px" y="68.60px" xml:space="preserve"><tspan xml:space="preserve">4:54PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> - Processed 1000 items</tspan></text><text x="20.00px" y="85.40px" xml:space="preserve"><tspan xml:space="preserve">4:54PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> - Generated 50 reports</tspan></text><text x="20.00px" y="102.20px" xml:space="preserve"><tspan xml:space="preserve">4:54PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> - Sent 25 notifications</tspan></text>
+<text x="20.00px" y="51.80px" xml:space="preserve"><tspan xml:space="preserve">1:40PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> worker: Task completed:</tspan></text><text x="20.00px" y="68.60px" xml:space="preserve"><tspan xml:space="preserve">1:40PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> worker: - Processed 1000 items</tspan></text><text x="20.00px" y="85.40px" xml:space="preserve"><tspan xml:space="preserve">1:40PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> worker: - Generated 50 reports</tspan></text><text x="20.00px" y="102.20px" xml:space="preserve"><tspan xml:space="preserve">1:40PM</tspan><tspan xml:space="preserve"> </tspan><tspan xml:space="preserve" fill="#00D787">INF</tspan><tspan xml:space="preserve"> worker: - Sent 25 notifications</tspan></text>
 </g>
 <svg x="10.00px" y="10.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>
