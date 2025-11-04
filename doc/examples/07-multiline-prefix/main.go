@@ -17,8 +17,7 @@ func main() {
 		Level: slog.LevelDebug,
 	})
 	// <EXAMPLE>
-	h.SetPrefix("worker")
-	log := slog.New(h)
+	log := slog.New(h.SetPrefix("worker"))
 
 	log.Info("Task completed:\n- Processed 1000 items\n- Generated 50 reports\n- Sent 25 notifications")
 	// </EXAMPLE>
