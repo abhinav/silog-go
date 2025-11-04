@@ -18,8 +18,7 @@ func main() {
 	})
 
 	// <EXAMPLE>
-	offsetHandler := baseHandler.WithLevelOffset(-4)
-	logger := slog.New(offsetHandler)
+	logger := slog.New(baseHandler.WithLevelOffset(-4))
 
 	logger.Error("This appears as WARNING")
 	logger.Warn("This appears as INFO")

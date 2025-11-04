@@ -310,6 +310,30 @@ func TestHandler_formatting(t *testing.T) {
 	})
 }
 
+// Regression test for WithLevelOffset bug where rec.Level was used
+// instead of the adjusted lvl when replaceAttr == nil.
+func TestHandler_WithLevelOffset_noReplaceAttr(t *testing.T) {
+	var buf strings.Builder
+	handler := silog.NewHandler(&buf, &silog.HandlerOptions{
+		Level: slog.LevelDebug,
+		Style: silog.PlainStyle(nil),
+		// No ReplaceAttr set - this is the key to triggering the bug
+	})
+
+	logger := slog.New(handler.WithLevelOffset(-4))
+	logger.Error("error-message")
+	logger.Warn("warn-message")
+	logger.Info("info-message")
+
+	output := buf.String()
+	// Should show downgraded labels: WRN, INF, DBG
+	// NOT the original labels: ERR, WRN, INF
+	assert.Contains(t, output, "WRN error-message", "Error should be downgraded to WRN")
+	assert.Contains(t, output, "INF warn-message", "Warn should be downgraded to INF")
+	assert.Contains(t, output, "DBG info-message", "Info should be downgraded to DBG")
+	assert.NotContains(t, output, "ERR error-message", "Should not show original ERR level")
+}
+
 func TestHandler_WithLevel(t *testing.T) {
 	var buffer strings.Builder
 	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
