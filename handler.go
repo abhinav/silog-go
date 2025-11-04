@@ -272,12 +272,12 @@ func (h *Handler) WithLevel(lvl slog.Leveler) *Handler {
 	return &newH
 }
 
-// SetPrefix returns a copy of this handler
+// WithPrefix returns a copy of this handler
 // that will use the given prefix for each log message.
 //
 // If the handler already has a prefix,
 // this will replace it with the new prefix.
-func (h *Handler) SetPrefix(prefix string) *Handler {
+func (h *Handler) WithPrefix(prefix string) *Handler {
 	newH := *h
 	newH.prefix = prefix
 	return &newH

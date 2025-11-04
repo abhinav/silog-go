@@ -1,0 +1,3 @@
+kind: Changed
+body: 'Handler: Rename SetPrefix method to WithPrefix.'
+time: 2025-11-04T13:59:59.301635-08:00

@@ -255,7 +255,7 @@ func TestHandler_formatting(t *testing.T) {
 	})
 
 	t.Run("Prefix", func(t *testing.T) {
-		log := slog.New(handler.SetPrefix("prefix"))
+		log := slog.New(handler.WithPrefix("prefix"))
 		assert.Empty(t, handler.Prefix(), "original handler prefix should be unchanged")
 		assert.Equal(t, "prefix", log.Handler().(*silog.Handler).Prefix())
 
@@ -264,7 +264,7 @@ func TestHandler_formatting(t *testing.T) {
 	})
 
 	t.Run("MultilineMessageWithPrefix", func(t *testing.T) {
-		log := slog.New(handler.SetPrefix("prefix"))
+		log := slog.New(handler.WithPrefix("prefix"))
 
 		log.Info("foo\nbar\nbaz")
 		assertLinesWithTime(t,
