@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
-	go.abhg.dev/log/silog v0.1.0
+	go.abhg.dev/log/silog v0.2.0
 )
 
 require (
