@@ -3,7 +3,7 @@ module go.abhg.dev/log/silog
 go 1.24
 
 require (
-	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/charmbracelet/lipgloss/v2 v2.0.0
 	github.com/muesli/termenv v0.16.0
 	github.com/stretchr/testify v1.11.1
 )
