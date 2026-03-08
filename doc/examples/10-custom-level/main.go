@@ -8,17 +8,15 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
 	"go.abhg.dev/log/silog"
 )
 
 const LevelTrace = slog.LevelDebug - 4
 
 func main() {
-	renderer := lipgloss.DefaultRenderer()
-	style := silog.DefaultStyle(renderer)
+	style := silog.DefaultStyle()
 	// <EXAMPLE>
-	style.LevelLabels[LevelTrace] = renderer.NewStyle().SetString("TRC")
+	style.LevelLabels[LevelTrace] = style.LevelLabels[slog.LevelDebug].SetString("TRC")
 	style.Messages[LevelTrace] = style.Messages[slog.LevelDebug]
 	// </EXAMPLE>
 

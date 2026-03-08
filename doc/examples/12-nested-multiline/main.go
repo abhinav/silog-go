@@ -13,7 +13,7 @@ import (
 
 func main() {
 	baseLogger := slog.New(silog.NewHandler(os.Stderr, &silog.HandlerOptions{
-		Style: silog.DefaultStyle(nil),
+		Style: silog.DefaultStyle(),
 		Level: slog.LevelDebug,
 	}))
 
