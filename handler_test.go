@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"go.abhg.dev/log/silog"
 )
@@ -18,7 +17,7 @@ func TestHandler_formatting(t *testing.T) {
 	var buffer strings.Builder
 	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(nil),
+		Style: silog.PlainStyle(),
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
 			if len(groups) == 0 && attr.Key == slog.TimeKey {
 				// Use a fixed time for deterministic output.
@@ -316,7 +315,7 @@ func TestHandler_WithLevelOffset_noReplaceAttr(t *testing.T) {
 	var buf strings.Builder
 	handler := silog.NewHandler(&buf, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(nil),
+		Style: silog.PlainStyle(),
 		// No ReplaceAttr set - this is the key to triggering the bug
 	})
 
@@ -343,7 +342,7 @@ func TestHandler_WithLevel(t *testing.T) {
 			}
 			return attr
 		},
-		Style: silog.PlainStyle(nil),
+		Style: silog.PlainStyle(),
 	})
 	rootLogger := slog.New(handler)
 
@@ -401,7 +400,7 @@ func TestHandler_Enabled(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := silog.NewHandler(io.Discard, &silog.HandlerOptions{
 				Level: tt.leveler,
-				Style: silog.PlainStyle(nil),
+				Style: silog.PlainStyle(),
 			})
 			for _, level := range tt.enabled {
 				assert.True(t, h.Enabled(t.Context(), level.Level()), "level %s should be enabled", level)
@@ -422,7 +421,7 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 	var buffer strings.Builder
 	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(nil),
+		Style: silog.PlainStyle(),
 	}))
 
 	var ready, done sync.WaitGroup
@@ -447,13 +446,8 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 }
 
 func TestHandler_multilineMessageStyling(t *testing.T) {
-	// Color profile has to be set on renderer explicitly.
-	// https://github.com/charmbracelet/lipgloss/issues/267
-	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
-	renderer.SetColorProfile(termenv.ANSI)
-
-	style := silog.PlainStyle(renderer)
-	style.Messages[slog.LevelInfo] = renderer.NewStyle().Bold(true)
+	style := silog.PlainStyle()
+	style.Messages[slog.LevelInfo] = lipgloss.NewStyle().Bold(true)
 
 	var buffer strings.Builder
 	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
@@ -470,19 +464,14 @@ func TestHandler_multilineMessageStyling(t *testing.T) {
 	log.Info("foo\nbar")
 
 	assert.Equal(t,
-		"INF \x1b[1mfoo\x1b[0m\n"+
-			"INF \x1b[1mbar\x1b[0m\n",
+		"INF \x1b[1mfoo\x1b[m\n"+
+			"INF \x1b[1mbar\x1b[m\n",
 		buffer.String())
 }
 
 func TestHandler_attrValueStyle(t *testing.T) {
-	// Color profile has to be set on renderer explicitly.
-	// https://github.com/charmbracelet/lipgloss/issues/267
-	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
-	renderer.SetColorProfile(termenv.ANSI)
-
-	style := silog.PlainStyle(renderer)
-	style.Values["k1"] = renderer.NewStyle().Bold(true)
+	style := silog.PlainStyle()
+	style.Values["k1"] = lipgloss.NewStyle().Bold(true)
 
 	var buffer strings.Builder
 	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
@@ -499,18 +488,13 @@ func TestHandler_attrValueStyle(t *testing.T) {
 	log.Info("foo", "k1", "bar")
 
 	assert.Equal(t,
-		"INF foo  k1=\x1b[1mbar\x1b[0m\n",
+		"INF foo  k1=\x1b[1mbar\x1b[m\n",
 		buffer.String())
 }
 
 func TestHandler_multlineAttrValueStyle(t *testing.T) {
-	// Color profile has to be set on renderer explicitly.
-	// https://github.com/charmbracelet/lipgloss/issues/267
-	renderer := lipgloss.NewRenderer(nil, termenv.WithUnsafe())
-	renderer.SetColorProfile(termenv.ANSI)
-
-	style := silog.PlainStyle(renderer)
-	style.Values["k1"] = renderer.NewStyle().Bold(true)
+	style := silog.PlainStyle()
+	style.Values["k1"] = lipgloss.NewStyle().Bold(true)
 
 	var buffer strings.Builder
 	log := slog.New(silog.NewHandler(&buffer, &silog.HandlerOptions{
@@ -529,8 +513,8 @@ func TestHandler_multlineAttrValueStyle(t *testing.T) {
 	assert.Equal(t,
 		"INF foo  \n"+
 			"  k1=\n"+
-			"    | \x1b[1mbar\x1b[0m\n"+
-			"    | \x1b[1mbaz\x1b[0m\n",
+			"    | \x1b[1mbar\x1b[m\n"+
+			"    | \x1b[1mbaz\x1b[m\n",
 		buffer.String())
 }
 
@@ -538,7 +522,7 @@ func TestHandler_replaceLevel_otherType(t *testing.T) {
 	var buffer strings.Builder
 	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(nil),
+		Style: silog.PlainStyle(),
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
 			if len(groups) == 0 && attr.Key == slog.LevelKey {
 				return slog.String(attr.Key, "custom")
@@ -561,7 +545,7 @@ func TestHandler_replaceTime_otherType(t *testing.T) {
 	var buffer strings.Builder
 	handler := silog.NewHandler(&buffer, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.PlainStyle(nil),
+		Style: silog.PlainStyle(),
 		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
 			if len(groups) == 0 && attr.Key == slog.TimeKey {
 				return slog.String(attr.Key, "custom-time")

@@ -13,7 +13,7 @@ import (
 
 func main() {
 	h := silog.NewHandler(os.Stderr, &silog.HandlerOptions{
-		Style: silog.DefaultStyle(nil),
+		Style: silog.DefaultStyle(),
 		Level: slog.LevelDebug,
 	})
 	log := slog.New(h)

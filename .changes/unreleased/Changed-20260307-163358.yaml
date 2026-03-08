@@ -1,0 +1,3 @@
+kind: Changed
+body: '`PlainStyle` no longer accepts a renderer argument.'
+time: 2026-03-07T16:33:58.124786-08:00

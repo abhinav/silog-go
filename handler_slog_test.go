@@ -17,7 +17,7 @@ func TestLogHandler_slogtest(t *testing.T) {
 
 		return NewHandler(&buffer, &HandlerOptions{
 			Level:      slog.LevelDebug,
-			Style:      PlainStyle(nil),
+			Style:      PlainStyle(),
 			TimeFormat: time.RFC3339,
 		})
 	}, func(t *testing.T) map[string]any {

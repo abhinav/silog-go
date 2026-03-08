@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"go.abhg.dev/log/silog"
 )
@@ -17,7 +17,7 @@ func TestDefaultStyle(t *testing.T) {
 		assert.NotEmpty(t, strings.TrimSpace(style.Value()), msgArgs...)
 	}
 
-	style := silog.DefaultStyle(nil)
+	style := silog.DefaultStyle()
 
 	assertHasValue(t, style.KeyValueDelimiter, "KeyValueDelimiter")
 	assertHasValue(t, style.MultilineValuePrefix, "MultilinePrefix")

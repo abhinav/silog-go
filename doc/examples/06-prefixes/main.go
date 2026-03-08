@@ -14,7 +14,7 @@ import (
 func main() {
 	baseHandler := silog.NewHandler(os.Stderr, &silog.HandlerOptions{
 		Level: slog.LevelDebug,
-		Style: silog.DefaultStyle(nil),
+		Style: silog.DefaultStyle(),
 	})
 
 	// <EXAMPLE>

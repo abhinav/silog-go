@@ -4,10 +4,10 @@ experimental = true
 [tools]
 go = "latest"
 "aqua:golangci/golangci-lint" = "latest"
-"ubi:miniscruff/changie" = "latest"
-"ubi:abhinav/doc2go" = "latest"
-"ubi:abhinav/requiredfield" = "latest"
-"ubi:abhinav/stitchmd" = "latest"
+"github:miniscruff/changie" = "latest"
+"github:abhinav/doc2go" = "latest"
+"github:abhinav/requiredfield" = "latest"
+"github:abhinav/stitchmd" = "latest"
 
 [tasks.all]
 description = "Build, lint and test the code."
