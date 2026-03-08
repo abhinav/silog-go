@@ -155,7 +155,7 @@ requestLog.Info("Request completed", "duration", "245ms")
 A custom log level can be defined with its own label and message style.
 
 ```go
-style.LevelLabels[LevelTrace] = renderer.NewStyle().SetString("TRC")
+style.LevelLabels[LevelTrace] = style.LevelLabels[slog.LevelDebug].SetString("TRC")
 style.Messages[LevelTrace] = style.Messages[slog.LevelDebug]
 
 logger.Log(context.Background(), LevelTrace, "Entering function")
