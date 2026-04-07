@@ -2,7 +2,7 @@ module go.abhg.dev/log/silog/doc
 
 go 1.25.3
 
-require go.abhg.dev/log/silog v0.2.0
+require go.abhg.dev/log/silog v0.3.0
 
 require (
 	github.com/charmbracelet/ultraviolet v0.0.0-20251205161215-1948445e3318 // indirect
