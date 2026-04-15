@@ -427,17 +427,14 @@ func TestHandler_withAttrsConcurrent(t *testing.T) {
 	var ready, done sync.WaitGroup
 	ready.Add(NumWorkers)
 	for range NumWorkers {
-		done.Add(1)
-		go func() {
-			defer done.Done()
-
+		done.Go(func() {
 			ready.Done()
 			ready.Wait()
 
 			for i := range NumWrites {
 				log.Info("message", "i", i)
 			}
-		}()
+		})
 	}
 
 	done.Wait()
