@@ -1,5 +1,5 @@
 [tools]
-"ubi:charmbracelet/freeze" = "latest"
+"github:charmbracelet/freeze" = "latest"
 
 [tasks."test:examples"]
 description = "Run all examples"
